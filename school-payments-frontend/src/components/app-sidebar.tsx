@@ -16,10 +16,13 @@ import {
     DropdownMenuItem,
     DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu"
-import { Calendar, Home, Inbox, Search, User2, ChevronUp } from "lucide-react"
+import { ModeToggle } from "@/components/ModeToggle"
+import { Calendar, Inbox, Search, User2, ChevronUp, LogOut } from "lucide-react"
+import { useAppDispatch, useAppSelector } from "@/redux/hooks"
+import { logout } from "@/redux/slices/userSlices"
+import { toast } from "@/components/ui/sonner"
 
 const items = [
-    { title: "Home", url: "/dashboard", icon: Home },
     { title: "Transactions", url: "/transactions", icon: Inbox },
     { title: "Payments", url: "/payments", icon: Calendar },
     { title: "Analytics", url: "/analytics", icon: Search },
@@ -27,10 +30,15 @@ const items = [
 
 export function AppSidebar() {
     const navigate = useNavigate();
+    const dispatch = useAppDispatch();
+    const { user } = useAppSelector((state: any) => state.auth);
 
     const handleLogout = () => {
+        dispatch(logout());
+        toast.success("Logged out successfully");
         navigate('/');
     }
+
     return (
         <Sidebar>
             <SidebarContent>
@@ -52,13 +60,21 @@ export function AppSidebar() {
                     </SidebarGroupContent>
                 </SidebarGroup>
             </SidebarContent>
-            <SidebarFooter>
-                <SidebarMenu>
+
+            <SidebarFooter className="flex flex-row align-middle">
+                {/* Theme Toggle */}
+                <div className="flex justify-center p-2">
+                    <ModeToggle />
+                </div>
+                
+                {/* User Dropdown */}
+                <SidebarMenu className="item-center my-auto flex-1">
                     <SidebarMenuItem>
                         <DropdownMenu>
                             <DropdownMenuTrigger asChild>
                                 <SidebarMenuButton>
-                                    <User2 /> Username
+                                    <User2 className="mr-2 h-4 w-4" /> 
+                                    {user?.name || "User"}
                                     <ChevronUp className="ml-auto" />
                                 </SidebarMenuButton>
                             </DropdownMenuTrigger>
@@ -67,13 +83,15 @@ export function AppSidebar() {
                                 className="w-[--radix-popper-anchor-width]"
                             >
                                 <DropdownMenuItem>
+                                    <User2 className="mr-2 h-4 w-4" />
                                     <span>Account</span>
                                 </DropdownMenuItem>
                                 <DropdownMenuItem>
                                     <span>Billing</span>
                                 </DropdownMenuItem>
-                                <DropdownMenuItem>
-                                    <span onClick={handleLogout}>Sign out</span>
+                                <DropdownMenuItem onClick={handleLogout}>
+                                    <LogOut className="mr-2 h-4 w-4" />
+                                    <span>Sign out</span>
                                 </DropdownMenuItem>
                             </DropdownMenuContent>
                         </DropdownMenu>

@@ -15,7 +15,6 @@ function Dashboard() {
                 {/* Main Content */}
                 <main className="flex-1 p-6">
                     <Routes>
-                        <Route path="/" element={<h1 className="text-2xl font-bold">Overview</h1>} />
                         <Route path="transactions" element={<Transactions />} />
                         <Route path="payments" element={<Payments />} />
             <Route path="analytics" element={<Analytics />} />
