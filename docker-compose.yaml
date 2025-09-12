@@ -15,6 +15,7 @@ services:
     ports:
       - "3000:5173"
     environment:
-      - VITE_API_URL=http://backend:5000   
+      - VITE_API_URL=https://task-z1yc.onrender.com
+ 
     depends_on:
       - backend

@@ -36,7 +36,7 @@ function Transactions() {
         
         // Fetch all transactions
         const response = await axios.get(
-          "http://localhost:5000/api/transactions/",
+          "https://task-z1yc.onrender.com/api/transactions/",
           {
             headers: {
               Authorization: `Bearer ${token}`

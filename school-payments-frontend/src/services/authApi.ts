@@ -2,7 +2,7 @@
 import axios from "axios";
 
 const API = axios.create({
-  baseURL: "http://localhost:5000/api/auth", // change to your backend URL
+  baseURL: "https://task-z1yc.onrender.com/api/auth", // change to your backend URL
 });
 
 const authApi = {

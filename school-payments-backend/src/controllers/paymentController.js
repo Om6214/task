@@ -36,7 +36,7 @@ export const createPayment = async (req, res) => {
         const payload = {
             school_id: effectiveSchoolId,
             amount: amount.toString(),
-            callback_url: "http://localhost:5000/api/payments/payment-callback"
+            callback_url: "https://task-z1yc.onrender.com/api/payments/payment-callback"
         };
 
         // 3️⃣ Generate sign

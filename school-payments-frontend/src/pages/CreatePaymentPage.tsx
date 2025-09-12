@@ -54,7 +54,7 @@ export default function CreatePaymentPage() {
 
     try {
       const response = await axios.post(
-        "http://localhost:5000/api/payments/create-payment",
+        "https://task-z1yc.onrender.com/api/payments/create-payment",
         {
           amount: formData.amount,
           student_info: {
