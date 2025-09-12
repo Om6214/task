@@ -292,7 +292,7 @@ export const handlePaymentCallback = async (req, res) => {
         }
 
         // Redirect to the transactions page with success message
-        return res.redirect(`http://localhost:3000/transactions?status=${status}&collectRequestId=${EdvironCollectRequestId}`);
+        return res.redirect(`https://task-1-u5ou.onrender.com/transactions?status=${status}&collectRequestId=${EdvironCollectRequestId}`);
     } catch (err) {
         console.error("Callback error:", err.response?.data || err.message);
         return res.status(500).json({
