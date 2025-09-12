@@ -1,39 +1,106 @@
-import { useState } from "react"
+import { useState,useEffect } from "react"
+import { useNavigate } from "react-router-dom"
 import { Input } from "@/components/ui/input"
 import { Button } from "@/components/ui/button"
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card"
 import { Label } from "@/components/ui/label"
 import { Toaster, toast } from "sonner"
 import { CreditCard, User, Mail, Phone, IndianRupee, Shield } from "lucide-react"
+import axios from "axios"
 
 export default function CreatePaymentPage() {
   const [loading, setLoading] = useState(false)
+  const [token, setToken] = useState<string | null>(null)
+  const navigate = useNavigate()
+  
   const [formData, setFormData] = useState({
     student_name: "",
     phone: "",
     email: "",
     amount: "",
+    school_id: "",
     trustee_id: ""
   })
+
+  useEffect(() => {
+    // Get token from localStorage when component mounts
+    const storedToken = localStorage.getItem("token")
+    setToken(storedToken)
+    
+    if (!storedToken) {
+      toast.error("Authentication required", {
+        description: "Please login to continue"
+      })
+      navigate("/") // Redirect to login if no token
+    }
+  }, [navigate])
 
   const handleChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     setFormData({ ...formData, [e.target.name]: e.target.value })
   }
 
-  const handleSubmit = (e: React.FormEvent) => {
+  const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault()
+    
+    if (!token) {
+      toast.error("Authentication required", {
+        description: "Please login to continue"
+      })
+      navigate("/login")
+      return
+    }
+    
     setLoading(true)
 
-    // 🔔 Just showing a demo toast (no API call yet)
-    toast.success("Payment Initiated 🚀", {
-      description: "This is a demo. API integration will be added later."
-    })
+    try {
+      const response = await axios.post(
+        "http://localhost:5000/api/payments/create-payment",
+        {
+          amount: formData.amount,
+          student_info: {
+            name: formData.student_name,
+            phone: formData.phone,
+            email: formData.email
+          },
+          trustee_id: formData.trustee_id
+        },
+        {
+          headers: {
+            Authorization: `Bearer ${token}`
+          }
+        }
+      )
 
-    setTimeout(() => setLoading(false), 1500) // reset button after demo
+      if (response.data.redirect_url) {
+        // Redirect to payment page
+        window.location.href = response.data.redirect_url
+      } else {
+        toast.error("Payment initiation failed", {
+          description: "No redirect URL received"
+        })
+      }
+    } catch (error: any) {
+      console.error("Payment error:", error)
+      
+      if (error.response?.status === 401) {
+        // Token is invalid or expired
+        toast.error("Session expired", {
+          description: "Please login again"
+        })
+        localStorage.removeItem("token") // Clear invalid token
+        navigate("/") // Redirect to login
+      } else {
+        toast.error("Payment Failed", {
+          description: error.response?.data?.message || error.message
+        })
+      }
+    } finally {
+      setLoading(false)
+    }
   }
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-blue-50 to-purple-50 dark: from-neutral-900 dark: to-zinc-900 flex items-center justify-center p-4">
+    <div className="min-h-screen  from-blue-50 to-purple-50 dark: from-neutral-900 dark: to-zinc-900 flex items-center justify-center p-4">
       <Card className="w-full max-w-md shadow-xl rounded-2xl border-0 dark:bg-gray-900 dark:border-gray-800">
         <CardHeader className="space-y-1 bg-gradient-to-r from-blue-600 to-purple-600 dark:from-blue-700 dark:to-purple-700 text-white rounded-t-2xl py-6">
           <div className="flex justify-between items-center">
@@ -65,21 +132,38 @@ export default function CreatePaymentPage() {
                 className="h-11 dark:bg-gray-800 dark:border-gray-700 dark:text-white"
               />
             </div>
-
-            <div className="space-y-2">
-              <Label htmlFor="phone" className="flex items-center gap-2 dark:text-gray-300">
-                <Phone className="h-4 w-4" />
-                Phone Number
-              </Label>
-              <Input
-                id="phone"
-                name="phone"
-                value={formData.phone}
-                onChange={handleChange}
-                placeholder="9876543210"
-                required
-                className="h-11 dark:bg-gray-800 dark:border-gray-700 dark:text-white"
-              />
+            <div className="flex gap-4">
+              <div className="space-y-2">
+                <Label htmlFor="phone" className="flex items-center gap-2 dark:text-gray-300">
+                  <Phone className="h-4 w-4" />
+                  Phone Number
+                </Label>
+                <Input
+                  id="phone"
+                  name="phone"
+                  value={formData.phone}
+                  onChange={handleChange}
+                  placeholder="9876543210"
+                  required
+                  className="h-11 dark:bg-gray-800 dark:border-gray-700 dark:text-white"
+                />
+              </div>
+              <div>
+                <Label htmlFor="Amount" className="text-xs text-gray-500 dark:text-gray-400 mt-1">
+                  <IndianRupee className="h-4 w-4 inline-block mr-1" />
+                  Amount
+                </Label>
+                <Input
+                  id="amount"
+                  type="number"
+                  name="amount"
+                  value={formData.amount}
+                  onChange={handleChange}
+                  placeholder="500"
+                  required
+                  className="h-11 dark:bg-gray-800 dark:border-gray-700 dark:text-white"
+                />
+              </div>
             </div>
 
             <div className="space-y-2">
@@ -99,22 +183,6 @@ export default function CreatePaymentPage() {
             </div>
 
             <div className="grid grid-cols-2 gap-4">
-              <div className="space-y-2">
-                <Label htmlFor="amount" className="flex items-center gap-2 dark:text-gray-300">
-                  <IndianRupee className="h-4 w-4" />
-                  Amount (₹)
-                </Label>
-                <Input
-                  id="amount"
-                  type="number"
-                  name="amount"
-                  value={formData.amount}
-                  onChange={handleChange}
-                  placeholder="500"
-                  required
-                  className="h-11 dark:bg-gray-800 dark:border-gray-700 dark:text-white"
-                />
-              </div>
 
               <div className="space-y-2">
                 <Label htmlFor="trustee_id" className="dark:text-gray-300">Trustee ID</Label>

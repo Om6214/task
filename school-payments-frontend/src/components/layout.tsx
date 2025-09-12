@@ -13,9 +13,8 @@ export default function Layout() {
         {/* Main Content */}
         <div className="w-full flex-1 flex flex-col">
           {/* Topbar with Sidebar toggle */}
-          <header className="flex items-center border-b p-2">
+          <header className="flex fixed items-center border-b ">
             <SidebarTrigger /> {/* <-- toggle button */}
-            <h1 className="ml-2 text-xl font-bold">School Payments</h1>
           </header>
 
           {/* Page Content */}

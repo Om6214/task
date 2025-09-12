@@ -38,6 +38,7 @@ export const protect = async (req, res, next) => {
     req.user = currentUser;
     next();
   } catch (error) {
+    console.error("Auth middleware error:", error);
     return res.status(401).json({
       message: "Invalid token or token expired"
     });

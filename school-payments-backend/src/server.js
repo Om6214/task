@@ -13,7 +13,12 @@ connectDB();
 
 const app = express();
 app.use(express.json());
-app.use(cors());
+const corOptions = {
+    origin: '*', 
+    methods: ['GET', 'POST', 'PUT', 'DELETE'],
+    credentials: true,
+};
+app.use(cors(corOptions));
 app.use(morgan("dev"));
 
 app.use("/api/auth", authRoutes);

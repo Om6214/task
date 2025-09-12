@@ -15,7 +15,6 @@ export type Transaction = {
   method: string
   status: "Success" | "Pending" | "Failed"
   student: string
-  phone: string
 }
 
 export const columns: ColumnDef<Transaction>[] = [
@@ -71,9 +70,5 @@ export const columns: ColumnDef<Transaction>[] = [
   {
     accessorKey: "student",
     header: "Student Name",
-  },
-  {
-    accessorKey: "phone",
-    header: "Phone No",
   },
 ]

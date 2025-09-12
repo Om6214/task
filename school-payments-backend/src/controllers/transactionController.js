@@ -19,8 +19,17 @@ export const getAllTransactions = async (req, res) => {
         $project: {
           _id: 1,
           collect_id: 1,
+          gateway_order_id: 1,
+          school_id: 1,
+          order_amount: 1,
           transaction_amount: 1,
+          payment_mode: 1,
+          payment_details: 1,
+          bank_reference: 1,
+          payment_message: 1,
           status: 1,
+          error_message: 1,
+          payment_time: 1,
           createdAt: 1,
           updatedAt: 1,
           order_info: 1 // include full order info
@@ -38,6 +47,7 @@ export const getAllTransactions = async (req, res) => {
 export const getTransactionsBySchool = async (req, res) => {
   try {
     const { schoolId } = req.params;
+    
     const transactions = await OrderStatus.aggregate([
       {
         $lookup: {
@@ -48,15 +58,37 @@ export const getTransactionsBySchool = async (req, res) => {
         }
       },
       { $unwind: "$order_info" },
-      { $match: { "order_info.school_id": new mongoose.Types.ObjectId(schoolId) } }
+      { $match: { "order_info.school_id": schoolId } }, // Match with string value
+      {
+        $project: {
+          _id: 1,
+          collect_id: 1,
+          gateway_order_id: 1,
+          school_id: 1,
+          order_amount: 1,
+          transaction_amount: 1,
+          payment_mode: 1,
+          payment_details: 1,
+          bank_reference: 1,
+          payment_message: 1,
+          status: 1,
+          error_message: 1,
+          payment_time: 1,
+          createdAt: 1,
+          updatedAt: 1,
+          order_info: 1
+        }
+      }
     ]);
+    
+    console.log("Transactions for school:", transactions);  
     return res.json(transactions);
   } catch (err) {
     return res.status(500).json({ message: "Error fetching school transactions", error: err.message });
   }
 };
 
-// Get transaction status (unchanged)
+// Get transaction status
 export const getTransactionStatus = async (req, res) => {
   try {
     const { custom_order_id } = req.params;

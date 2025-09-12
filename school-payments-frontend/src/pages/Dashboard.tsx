@@ -1,7 +1,7 @@
 import { SidebarProvider } from "@/components/ui/sidebar"
 import { Routes, Route } from "react-router-dom"
 import Transactions from "@/pages/Transaction"
-import Payments from "@/pages/Payments"
+import Payments from "@/pages/CreatePaymentPage"
 import Analytics from "@/pages/Analytics"
 import { AppSidebar } from "@/components/app-sidebar"
 

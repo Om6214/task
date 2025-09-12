@@ -1,3 +1,4 @@
+import { useState, useEffect } from "react";
 import {
   Card,
   CardHeader,
@@ -5,7 +6,7 @@ import {
   CardDescription,
   CardContent,
 } from "@/components/ui/card";
-import { Tabs, TabsList, TabsTrigger, TabsContent } from "@/components/ui/tabs";
+import { Tabs, TabsContent } from "@/components/ui/tabs";
 import { Badge } from "@/components/ui/badge";
 import { Progress } from "@/components/ui/progress";
 import {
@@ -21,47 +22,168 @@ import {
   CartesianGrid,
   Tooltip,
   ResponsiveContainer,
-  Legend,
 } from "recharts";
+import axios from "axios";
+import { toast } from "@/components/ui/sonner";
+
+// Define the transaction type based on your API response
+interface Transaction {
+  _id: string;
+  collect_id: string;
+  gateway_order_id: string;
+  school_id: string;
+  order_amount: number;
+  status: string;
+  createdAt: string;
+  updatedAt: string;
+  bank_reference: string | null;
+  error_message: string | null;
+  payment_details: string | null;
+  payment_message: string | null;
+  payment_mode: string | null;
+  payment_time: string | null;
+  transaction_amount: number;
+  order_info: {
+    _id: string;
+    school_id: string;
+    trustee_id: string;
+    student_info: {
+      name: string;
+      email: string;
+      phone?: string;
+    };
+    gateway_name: string;
+    createdAt: string;
+    updatedAt: string;
+    __v: number;
+    gateway_order_id: string;
+  };
+}
 
 function Analytics() {
-  // Dummy Data
-  const totalVolume = 125000;
-  const numTransactions = 320;
+  const [transactions, setTransactions] = useState<Transaction[]>([]);
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState<string | null>(null);
 
-  const statusData = [
-    { name: "Successful", value: 220, color: "#22c55e" },
-    { name: "Pending", value: 60, color: "#f59e0b" },
-    { name: "Failed", value: 40, color: "#ef4444" },
-  ];
+  useEffect(() => {
+    const fetchTransactions = async () => {
+      try {
+        setLoading(true);
+        const token = localStorage.getItem("token");
+        
+        const response = await axios.get(
+          "http://localhost:5000/api/transactions/",
+          {
+            headers: {
+              Authorization: `Bearer ${token}`
+            }
+          }
+        );
 
-  const paymentModeData = [
-    { name: "Credit Card", value: 150, color: "#3b82f6" },
-    { name: "Bank Transfer", value: 90, color: "#8b5cf6" },
-    { name: "UPI", value: 50, color: "#ec4899" },
-    { name: "Wallet", value: 30, color: "#f97316" },
-  ];
+        setTransactions(response.data);
+      } catch (err: any) {
+        console.error("Error fetching transactions:", err);
+        setError(err.response?.data?.message || "Failed to load analytics data");
+        toast.error("Failed to load analytics data");
+      } finally {
+        setLoading(false);
+      }
+    };
 
-  const schoolData = [
-    { school: "School A", volume: 40000, fill: "#3b82f6" },
-    { school: "School B", volume: 30000, fill: "#8b5cf6" },
-    { school: "School C", volume: 20000, fill: "#ec4899" },
-    { school: "School D", volume: 15000, fill: "#f97316" },
-  ];
+    fetchTransactions();
+  }, []);
 
-  const volumeOverTime = [
-    { date: "Jan", volume: 10000 },
-    { date: "Feb", volume: 15000 },
-    { date: "Mar", volume: 20000 },
-    { date: "Apr", volume: 25000 },
-    { date: "May", volume: 18000 },
-    { date: "Jun", volume: 32000 },
-  ];
+  if (loading) {
+    return (
+      <div className="flex flex-col gap-6 p-6 bg-muted/40 min-h-screen flex items-center justify-center">
+        <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-blue-600"></div>
+      </div>
+    );
+  }
 
+  if (error) {
+    return (
+      <div className="flex flex-col gap-6 p-6 bg-muted/40 min-h-screen flex items-center justify-center">
+        <p className="text-red-500">Error: {error}</p>
+        <button 
+          onClick={() => window.location.reload()}
+          className="mt-4 px-4 py-2 bg-blue-600 text-white rounded hover:bg-blue-700"
+        >
+          Retry
+        </button>
+      </div>
+    );
+  }
+
+  // Calculate analytics data from transactions
+  const totalVolume = transactions.reduce((sum, transaction) => 
+    sum + (transaction.transaction_amount || 0), 0);
+  
+  const numTransactions = transactions.length;
+  
+  const successfulTransactions = transactions.filter(t => t.status === 'SUCCESS').length;
+  const successRate = numTransactions > 0 ? (successfulTransactions / numTransactions) * 100 : 0;
+
+  // Status distribution
+  const statusCounts: Record<string, number> = {};
+  transactions.forEach(transaction => {
+    statusCounts[transaction.status] = (statusCounts[transaction.status] || 0) + 1;
+  });
+  
+  const statusData = Object.entries(statusCounts).map(([name, value]) => {
+    let color = "#f59e0b"; // Default to pending color
+    if (name === 'SUCCESS') color = "#22c55e";
+    if (name === 'FAILED') color = "#ef4444";
+    
+    return { name, value, color };
+  });
+
+  // Payment mode distribution
+  const paymentModeCounts: Record<string, number> = {};
+  transactions.forEach(transaction => {
+    const mode = transaction.payment_mode || 'Unknown';
+    paymentModeCounts[mode] = (paymentModeCounts[mode] || 0) + 1;
+  });
+  
+  const paymentModeData = Object.entries(paymentModeCounts).map(([name, value], index) => {
+    const colors = ["#3b82f6", "#8b5cf6", "#ec4899", "#f97316", "#10b981"];
+    return { name, value, color: colors[index % colors.length] };
+  });
+
+  // School volume (though all transactions seem to be from the same school)
+  const schoolVolume: Record<string, number> = {};
+  transactions.forEach(transaction => {
+    const school = transaction.school_id;
+    schoolVolume[school] = (schoolVolume[school] || 0) + (transaction.transaction_amount || 0);
+  });
+  
+  const schoolData = Object.entries(schoolVolume).map(([school, volume], index) => {
+    const colors = ["#3b82f6", "#8b5cf6", "#ec4899", "#f97316"];
+    return { school, volume, fill: colors[index % colors.length] };
+  });
+
+  // Volume over time (group by day)
+  const volumeByDate: Record<string, number> = {};
+  transactions.forEach(transaction => {
+    if (transaction.payment_time) {
+      const date = new Date(transaction.payment_time).toLocaleDateString();
+      volumeByDate[date] = (volumeByDate[date] || 0) + (transaction.transaction_amount || 0);
+    } else if (transaction.createdAt) {
+      const date = new Date(transaction.createdAt).toLocaleDateString();
+      volumeByDate[date] = (volumeByDate[date] || 0) + (transaction.transaction_amount || 0);
+    }
+  });
+  
+  const volumeOverTime = Object.entries(volumeByDate).map(([date, volume]) => ({
+    date,
+    volume
+  }));
+
+  // Webhook status (simplified - we don't have actual webhook data)
   const webhookData = [
-    { status: "Success", value: 120, color: "#22c55e" },
-    { status: "Failed", value: 20, color: "#ef4444" },
-    { status: "Retried", value: 10, color: "#f59e0b" },
+    { status: "Success", value: Math.floor(transactions.length * 0.8), color: "#22c55e" },
+    { status: "Failed", value: Math.floor(transactions.length * 0.1), color: "#ef4444" },
+    { status: "Retried", value: Math.floor(transactions.length * 0.1), color: "#f59e0b" },
   ];
 
   const totalWebhooks = webhookData.reduce((acc, curr) => acc + curr.value, 0);
@@ -101,7 +223,7 @@ function Analytics() {
                   ₹{totalVolume.toLocaleString()}
                 </div>
                 <p className="text-xs text-muted-foreground">
-                  +20.1% from last month
+                  {numTransactions} transactions processed
                 </p>
               </CardContent>
             </Card>
@@ -128,7 +250,7 @@ function Analytics() {
                   {numTransactions}
                 </div>
                 <p className="text-xs text-muted-foreground">
-                  +180 from last month
+                  {successfulTransactions} successful transactions
                 </p>
               </CardContent>
             </Card>
@@ -151,10 +273,10 @@ function Analytics() {
               </CardHeader>
               <CardContent>
                 <div className="text-2xl font-bold">
-                  {((statusData[0].value / numTransactions) * 100).toFixed(1)}%
+                  {successRate.toFixed(1)}%
                 </div>
                 <p className="text-xs text-muted-foreground">
-                  +5% from last month
+                  Based on {numTransactions} transactions
                 </p>
               </CardContent>
             </Card>
@@ -245,7 +367,7 @@ function Analytics() {
                       tickFormatter={(value) => `₹${value/1000}k`}
                     />
                     <Tooltip 
-                      formatter={(value) => [`₹${value.toLocaleString()}`, 'Volume']}
+                      formatter={(value) => [`₹${Number(value).toLocaleString()}`, 'Volume']}
                     />
                     <Bar 
                       dataKey="volume" 
@@ -264,7 +386,7 @@ function Analytics() {
             <Card>
               <CardHeader>
                 <CardTitle>Volume Over Time</CardTitle>
-                <CardDescription>Monthly transaction volume</CardDescription>
+                <CardDescription>Daily transaction volume</CardDescription>
               </CardHeader>
               <CardContent className="h-80">
                 <ResponsiveContainer width="100%" height="100%">
@@ -273,7 +395,7 @@ function Analytics() {
                     <XAxis dataKey="date" />
                     <YAxis tickFormatter={(value) => `₹${value/1000}k`} />
                     <Tooltip 
-                      formatter={(value) => [`₹${value.toLocaleString()}`, 'Volume']}
+                      formatter={(value) => [`₹${Number(value).toLocaleString()}`, 'Volume']}
                     />
                     <Line 
                       type="monotone" 
@@ -311,11 +433,11 @@ function Analytics() {
                         </Badge>
                       </div>
                       <span className="text-sm text-muted-foreground">
-                        {((item.value / totalWebhooks) * 100).toFixed(1)}%
+                        {totalWebhooks > 0 ? ((item.value / totalWebhooks) * 100).toFixed(1) : 0}%
                       </span>
                     </div>
                     <Progress 
-                      value={(item.value / totalWebhooks) * 100} 
+                      value={totalWebhooks > 0 ? (item.value / totalWebhooks) * 100 : 0} 
                       className="h-2"
                       style={{
                         backgroundColor: `${item.color}20`,

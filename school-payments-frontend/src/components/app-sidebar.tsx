@@ -66,14 +66,14 @@ export function AppSidebar() {
                 <div className="flex justify-center p-2">
                     <ModeToggle />
                 </div>
-                
+
                 {/* User Dropdown */}
                 <SidebarMenu className="item-center my-auto flex-1">
                     <SidebarMenuItem>
                         <DropdownMenu>
                             <DropdownMenuTrigger asChild>
                                 <SidebarMenuButton>
-                                    <User2 className="mr-2 h-4 w-4" /> 
+                                    <User2 className="mr-2 h-4 w-4" />
                                     {user?.name || "User"}
                                     <ChevronUp className="ml-auto" />
                                 </SidebarMenuButton>
@@ -82,13 +82,6 @@ export function AppSidebar() {
                                 side="top"
                                 className="w-[--radix-popper-anchor-width]"
                             >
-                                <DropdownMenuItem>
-                                    <User2 className="mr-2 h-4 w-4" />
-                                    <span>Account</span>
-                                </DropdownMenuItem>
-                                <DropdownMenuItem>
-                                    <span>Billing</span>
-                                </DropdownMenuItem>
                                 <DropdownMenuItem onClick={handleLogout}>
                                     <LogOut className="mr-2 h-4 w-4" />
                                     <span>Sign out</span>
